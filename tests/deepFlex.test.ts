@@ -47,14 +47,16 @@ describe('deepSet', () => {
       obj: { a: { b: { c: 42 } } },
       path: 'a.b.d',
       value: 100,
-      expected: { a: { b: { c: 42, d: 100 } } },
+      expectedNew: { a: { b: { c: 42, d: 100 } } },
+      expectedOriginal: { a: { b: { c: 42 } } },
     },
     {
       description: 'should create intermediate paths if they do not exist',
       obj: { a: {} },
       path: 'a.b.c',
       value: 50,
-      expected: { a: { b: { c: 50 } } },
+      expectedNew: { a: { b: { c: 50 } } },
+      expectedOriginal: { a: {} },
     },
     {
       description: 'should not mutate the original object',
@@ -64,16 +66,38 @@ describe('deepSet', () => {
       expectedOriginal: { a: { b: { c: 42 } } },
       expectedNew: { a: { b: { c: 42, d: 100 } } },
     },
+    {
+      description: 'should handle empty path',
+      obj: { a: { b: { c: 42 } } },
+      path: '',
+      value: 100,
+      expectedNew: 100,
+      expectedOriginal: { a: { b: { c: 42 } } },
+    },
+    {
+      description: 'should handle setting value on non-object',
+      obj: { a: 42 },
+      path: 'a.b.c',
+      value: 100,
+      expectedNew: { a: { b: { c: 100 } } },
+      expectedOriginal: { a: 42 },
+    },
+    {
+      description: 'should overwrite existing value',
+      obj: { a: { b: { c: 42 } } },
+      path: 'a.b.c',
+      value: 100,
+      expectedNew: { a: { b: { c: 100 } } },
+      expectedOriginal: { a: { b: { c: 42 } } },
+    },
   ]
 
   testCases.forEach(
-    ({ description, obj, path, value, expected, expectedOriginal }) => {
+    ({ description, obj, path, value, expectedNew, expectedOriginal }) => {
       test(description, () => {
         const result = deepSet(obj, path, value)
-        expect(result).toEqual(expected)
-        if (expectedOriginal) {
-          expect(obj).toEqual(expectedOriginal) // Immutability check
-        }
+        expect(result).toEqual(expectedNew)
+        expect(obj).toEqual(expectedOriginal)
       })
     },
   )
@@ -84,32 +108,32 @@ describe('deepDelete', () => {
     {
       description: 'should delete a deeply nested property',
       obj: { a: { b: { c: 42, d: 100 } } },
-      path: 'a.b.c',
-      expected: { a: { b: { d: 100 } } },
+      path: ['a', 'b', 'c'],
+      expectedOriginal: { a: { b: { c: 42, d: 100 } } },
+      expectedNew: { a: { b: { d: 100 } } },
     },
     {
       description: 'should not throw when deleting non-existent property',
       obj: { a: { b: { d: 100 } } },
-      path: 'a.b.c',
-      expected: { a: { b: { d: 100 } } },
+      path: ['a', 'b', 'c'],
+      expectedOriginal: { a: { b: { d: 100 } } },
+      expectedNew: { a: { b: { d: 100 } } },
     },
     {
       description: 'should not mutate the original object when deleting',
       obj: { a: { b: { c: 42, d: 100 } } },
-      path: 'a.b.c',
+      path: ['a', 'b', 'c'],
       expectedOriginal: { a: { b: { c: 42, d: 100 } } },
       expectedNew: { a: { b: { d: 100 } } },
     },
   ]
 
   testCases.forEach(
-    ({ description, obj, path, expected, expectedOriginal }) => {
+    ({ description, obj, path, expectedOriginal, expectedNew }) => {
       test(description, () => {
-        const result = deepDelete(obj, [path])
-        expect(result).toEqual(expected)
-        if (expectedOriginal) {
-          expect(obj).toEqual(expectedOriginal) // Immutability check
-        }
+        const result = deepDelete(obj, path)
+        expect(result).toEqual(expectedNew)
+        expect(obj).toEqual(expectedOriginal) // Immutability check
       })
     },
   )
